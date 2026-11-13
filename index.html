@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ahorcado Tech · Código, Seguridad e IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#070b14;--panel:#0e1626;--panel2:#121d33;--line:#1d2c47;--tx:#e6edf7;--mut:#8a9bb8;--cy:#22d3ee;--em:#34d399;--vi:#a78bfa;--rose:#fb7185;--amb:#fbbf24;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(900px 500px at 15% -10%,rgba(34,211,238,.10),transparent 60%),radial-gradient(800px 500px at 100% 0,rgba(167,139,250,.12),transparent 60%),var(--bg);color:var(--tx);font-family:"Space Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;line-height:1.45}
+.wrap{max-width:1080px;margin:0 auto;padding:18px 16px 40px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+h1{margin:0;font-size:1.5rem;letter-spacing:-.01em}
+h1 span{color:var(--cy);text-shadow:0 0 18px rgba(34,211,238,.55)}
+.sub{color:var(--mut);font-size:.9rem;margin:2px 0 0}
+.levels{display:flex;gap:8px;flex-wrap:wrap}
+.lv{background:var(--panel);border:1px solid var(--line);color:var(--mut);border-radius:12px;padding:9px 13px;font:inherit;cursor:pointer;text-align:left;transition:.2s}
+.lv b{display:block;color:var(--tx);font-size:.9rem}.lv small{font-size:.75rem}
+.lv:hover{border-color:var(--vi)}
+.lv.on{border-color:var(--cy);box-shadow:0 0 0 1px var(--cy),0 0 22px rgba(34,211,238,.25);color:var(--cy)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:18px;padding:18px;position:relative}
+.card h2{margin:0 0 12px;font-size:1rem;color:var(--mut);font-weight:500}
+.hint{border:1px solid rgba(167,139,250,.55);background:rgba(167,139,250,.09);box-shadow:0 0 24px rgba(167,139,250,.14);border-radius:14px;padding:12px 14px;margin-bottom:14px}
+.hint b{color:var(--vi);display:block;font-size:.85rem;margin-bottom:2px}
+.hint p{margin:0;font-size:1rem}
+.play{display:flex;gap:18px;align-items:center;flex-wrap:wrap;justify-content:center}
+.bot{width:150px;flex:none}
+.bot svg{width:100%;height:auto;filter:drop-shadow(0 0 8px rgba(34,211,238,.45))}
+.part{stroke:var(--cy);fill:none;stroke-width:6;stroke-linecap:round;transition:all .35s}
+.part.f{fill:rgba(34,211,238,.14)}
+.part.off{stroke:var(--rose);opacity:.3;stroke-dasharray:3 7}
+.part.f.off{fill:none}
+.mid{flex:1;min-width:240px}
+.timer{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.tnum{font-size:1.6rem;font-weight:700;width:3.4ch;color:var(--em);font-variant-numeric:tabular-nums}
+.bar{flex:1;height:10px;background:#0a1120;border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--em),var(--cy));border-radius:99px;transition:width .1s linear}
+.timer.low .tnum{color:var(--rose)}.timer.low .bar i{background:linear-gradient(90deg,var(--rose),var(--amb))}
+.cells{display:flex;gap:6px;margin-bottom:14px}
+.cell{flex:1;height:8px;border-radius:4px;background:var(--em);box-shadow:0 0 10px rgba(52,211,153,.5);transition:.3s}
+.cell.x{background:#2a1a24;box-shadow:none}
+.word{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin:6px 0 10px}
+.ch{width:clamp(30px,8vw,46px);height:clamp(40px,10vw,56px);border-bottom:3px solid var(--cy);background:rgba(34,211,238,.05);border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;font-size:clamp(1.2rem,4.5vw,1.7rem);font-weight:700;color:var(--tx)}
+.ch.miss{color:var(--rose);border-color:var(--rose)}
+.ch.sp{width:16px;border:0;background:none}
+.status{min-height:1.5em;text-align:center;color:var(--mut);font-size:.9rem;margin-bottom:10px}
+.kb{display:flex;flex-direction:column;gap:7px;align-items:center}
+.row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.k{min-width:clamp(30px,8.4vw,42px);height:clamp(38px,9vw,44px);border-radius:10px;border:1px solid var(--line);background:#0b1424;color:var(--tx);font:700 1rem inherit;font-family:inherit;cursor:pointer;transition:.15s}
+.k:hover:not(:disabled){border-color:var(--cy);box-shadow:0 0 12px rgba(34,211,238,.35)}
+.k.ok{background:rgba(52,211,153,.16);border-color:var(--em);color:var(--em)}
+.k.no{background:rgba(251,113,133,.12);border-color:var(--rose);color:var(--rose)}
+.k:disabled{cursor:default;opacity:.8}
+:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+td{padding:8px 4px;border-bottom:1px solid var(--line)}
+td:last-child{text-align:right;font-weight:700}
+tr:last-child td{border-bottom:0}
+.badges{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.bd{border:1px solid var(--line);border-radius:12px;padding:10px 8px;text-align:center;background:#0b1424;opacity:.45;filter:grayscale(1);transition:.3s}
+.bd .ic{font-size:1.6rem}.bd b{display:block;font-size:.78rem;margin-top:2px}.bd small{display:block;color:var(--mut);font-size:.68rem;line-height:1.25;margin-top:2px}
+.bd.on{opacity:1;filter:none;border-color:var(--amb);box-shadow:0 0 18px rgba(251,191,36,.25)}
+.over{position:absolute;inset:0;background:rgba(7,11,20,.92);backdrop-filter:blur(3px);border-radius:18px;display:none;align-items:center;justify-content:center;text-align:center;padding:20px;z-index:5}
+.over.show{display:flex}
+.over h3{margin:0 0 6px;font-size:1.5rem}
+.over .w{font-size:1.3rem;font-weight:700;letter-spacing:.04em;margin:6px 0}
+.over p{color:var(--mut);margin:0 auto 14px;max-width:44ch}
+.btn{background:linear-gradient(135deg,var(--cy),var(--vi));color:#06101d;border:0;border-radius:12px;padding:11px 20px;font:700 1rem inherit;font-family:inherit;cursor:pointer;margin:3px}
+.btn.g{background:transparent;color:var(--tx);border:1px solid var(--line)}
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translate(-50%,-140%);background:#1a1426;border:1px solid var(--amb);color:var(--amb);padding:10px 16px;border-radius:12px;transition:transform .4s;z-index:20;box-shadow:0 0 24px rgba(251,191,36,.3);max-width:92vw;text-align:center}
+.toast.show{transform:translate(-50%,0)}
+.shake{animation:sh .3s}
+@keyframes sh{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div><h1>🧠 Ahorcado <span>Tech</span></h1><p class="sub">Adivina el término antes de que el sistema se desconecte.</p></div>
+  <div class="levels" id="levels"></div>
+</header>
+<div class="grid">
+  <main class="card" id="game">
+    <div class="hint"><b>💡 Pista del sistema</b><p id="hint"></p></div>
+    <div class="play">
+      <div class="bot">
+        <svg viewBox="0 0 160 200" aria-label="Robot que pierde piezas con cada error">
+          <g class="part" id="p0"><line x1="80" y1="30" x2="80" y2="14"/><circle cx="80" cy="9" r="4"/></g>
+          <g class="part f" id="p1"><rect x="52" y="32" width="56" height="38" rx="11"/><circle cx="68" cy="51" r="3" fill="currentColor"/><circle cx="92" cy="51" r="3"/></g>
+          <g class="part f" id="p2"><rect x="58" y="76" width="44" height="54" rx="9"/></g>
+          <g class="part" id="p3"><line x1="58" y1="88" x2="26" y2="118"/></g>
+          <g class="part" id="p4"><line x1="102" y1="88" x2="134" y2="118"/></g>
+          <g class="part" id="p5"><line x1="70" y1="132" x2="62" y2="184"/><line x1="90" y1="132" x2="98" y2="184"/></g>
+        </svg>
+      </div>
+      <div class="mid">
+        <div class="timer" id="timer"><span class="tnum" id="tnum">30</span><div class="bar"><i id="tbar"></i></div></div>
+        <div class="cells" id="cells" title="Integridad del sistema"></div>
+        <div class="word" id="word" aria-live="polite"></div>
+        <div class="status" id="status"></div>
+      </div>
+    </div>
+    <div class="kb" id="kb"></div>
+    <div class="over" id="over"><div>
+      <h3 id="oTitle"></h3><div class="w" id="oWord"></div><p id="oText"></p>
+      <button class="btn" id="oNext"></button><button class="btn g" id="oRetry">Repetir nivel</button>
+    </div></div>
+  </main>
+  <aside class="card">
+    <h2>📊 Estado de la partida</h2>
+    <table>
+      <tr><td>Nivel</td><td id="sLvl"></td></tr>
+      <tr><td>Palabra</td><td id="sWord"></td></tr>
+      <tr><td>Errores</td><td id="sErr"></td></tr>
+      <tr><td>Racha</td><td id="sStreak"></td></tr>
+      <tr><td>Puntos</td><td id="sScore"></td></tr>
+      <tr><td>Récord</td><td id="sBest"></td></tr>
+    </table>
+    <h2 style="margin-top:18px">🏅 Insignias <span id="bCount"></span></h2>
+    <div class="badges" id="badges"></div>
+  </aside>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const $=id=>document.getElementById(id);
+const norm=s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+const LV=[
+{n:"Novato del Código",ic:"💾",w:[
+ {w:"HARDWARE",h:"Conjunto de componentes físicos de un computador: lo que puedes tocar, como la placa, el procesador o el teclado."},
+ {w:"BUG",h:"Error en un programa que provoca resultados inesperados o fallos de funcionamiento."},
+ {w:"PIXEL",h:"Unidad mínima de color de una imagen digital; miles de ellos forman lo que ves en pantalla."}]},
+{n:"Hacker Ético",ic:"🛡️",w:[
+ {w:"FIREWALL",h:"Barrera que filtra el tráfico de una red y bloquea las conexiones no autorizadas."},
+ {w:"ENCRIPCIÓN",h:"Proceso de convertir información en un código ilegible para que solo quien tenga la clave pueda leerla."},
+ {w:"PHISHING",h:"Engaño mediante un mensaje o correo falso para robar contraseñas o datos personales."}]},
+{n:"Arquitecto de IA",ic:"🤖",w:[
+ {w:"MACHINE LEARNING",h:"Rama de la inteligencia artificial en la que los sistemas aprenden patrones a partir de datos, sin que cada regla se programe a mano."},
+ {w:"PROMPT",h:"Instrucción o texto que se entrega a un modelo de IA para guiar lo que responde."},
+ {w:"RED NEURONAL",h:"Modelo inspirado en el cerebro: capas de nodos conectados que procesan información y detectan patrones."}]}
+];
+const BD=[
+{id:"vel",ic:"⚡",n:"Velocista Tech",d:"Resuelve una palabra en 15 s o menos."},
+{id:"dep",ic:"🐞",n:"Depurador Supremo",d:"Resuelve una palabra sin errores."},
+{id:"est",ic:"♟️",n:"Estratega",d:"Completa un nivel sin perder palabras y con 4 errores o menos."},
+{id:"lim",ic:"🧯",n:"Al límite",d:"Gana con un solo intento restante."},
+{id:"rac",ic:"🔥",n:"Racha de 3",d:"Gana 3 palabras seguidas."},
+{id:"arq",ic:"🏛️",n:"Arquitecto de IA",d:"Completa los tres niveles."}];
+const MAX=6,TURN=30;
+let store={badges:[],done:[],best:0};
+try{const r=JSON.parse(localStorage.getItem("techhang")||"null");if(r)store=Object.assign(store,r)}catch(e){}
+const save=()=>{try{localStorage.setItem("techhang",JSON.stringify(store))}catch(e){}};
+let G=null,toastT;
+
+function toast(t){const el=$("toast");el.textContent=t;el.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("show"),3200)}
+function unlock(id){if(store.badges.includes(id))return;store.badges.push(id);save();const b=BD.find(x=>x.id===id);toast("🏅 Insignia desbloqueada: "+b.n);renderBadges()}
+
+function buildStatic(){
+  $("levels").innerHTML=LV.map((l,i)=>`<button class="lv" data-i="${i}"><b>${l.ic} Nivel ${i+1}</b><small>${l.n}</small></button>`).join("");
+  $("levels").onclick=e=>{const b=e.target.closest(".lv");if(b)startLevel(+b.dataset.i)};
+  $("cells").innerHTML=Array.from({length:MAX},()=>'<i class="cell"></i>').join("");
+  const rows=["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"];
+  $("kb").innerHTML=rows.map(r=>'<div class="row">'+[...r].map(c=>`<button class="k" data-l="${c}">${c}</button>`).join("")+"</div>").join("");
+  $("kb").onclick=e=>{const b=e.target.closest(".k");if(b)guess(b.dataset.l)};
+  document.addEventListener("keydown",e=>{if(e.ctrlKey||e.metaKey||e.altKey)return;const l=e.key.toUpperCase();if(/^[A-Z]$/.test(l))guess(l)});
+  $("oRetry").onclick=()=>startLevel(G.lvl);
+}
+
+function startLevel(i){
+  G={lvl:i,idx:0,score:0,streak:0,wins:0,lvlErr:0,lvlLoss:0};
+  loadWord();
+  document.querySelectorAll(".lv").forEach((b,j)=>b.classList.toggle("on",j===i));
+}
+function loadWord(){
+  const w=LV[G.lvl].w[G.idx];
+  Object.assign(G,{disp:w.w,norm:norm(w.w),hint:w.h,g:new Set(),err:0,over:false,t0:Date.now(),turn:Date.now(),msg:"Elige una letra. Tienes "+TURN+" s por turno."});
+  $("over").classList.remove("show");
+  render();
+}
+const solved=()=>[...G.norm].every(c=>c===" "||G.g.has(c));
+function guess(l){
+  if(!G||G.over||G.g.has(l))return;
+  G.g.add(l);G.turn=Date.now();
+  if(G.norm.includes(l)){G.msg="✅ Correcto: la letra "+l+" está en la palabra.";if(solved())return finish(true)}
+  else{G.err++;G.msg="❌ La letra "+l+" no está. Pierdes un intento.";shake();if(G.err>=MAX)return finish(false)}
+  render();
+}
+function shake(){const g=$("game");g.classList.remove("shake");void g.offsetWidth;g.classList.add("shake")}
+function tick(){
+  if(!G||G.over)return;
+  const left=Math.max(0,TURN-(Date.now()-G.turn)/1000);
+  $("tnum").textContent=Math.ceil(left);
+  $("tbar").style.width=(left/TURN*100)+"%";
+  $("timer").classList.toggle("low",left<=10);
+  if(left<=0){G.err++;G.turn=Date.now();G.msg="⏱️ Tiempo agotado: se descuenta un intento.";shake();if(G.err>=MAX)return finish(false);render()}
+}
+function finish(win){
+  G.over=true;
+  const el=(Date.now()-G.t0)/1000,left=Math.max(0,TURN-(Date.now()-G.turn)/1000);
+  G.lvlErr+=G.err;
+  const last=G.idx===LV[G.lvl].w.length-1;
+  let title,text;
+  if(win){
+    const pts=Math.round((100+left*5+(MAX-G.err)*20)*(G.lvl+1));
+    G.score+=pts;G.streak++;G.wins++;
+    title="🎉 ¡Sistema asegurado!";text=`+${pts} puntos · ${el.toFixed(1)} s · ${G.err} error${G.err===1?"":"es"}.`;
+    if(el<=15)unlock("vel");if(G.err===0)unlock("dep");if(G.err===MAX-1)unlock("lim");if(G.streak>=3)unlock("rac");
+  }else{G.streak=0;G.lvlLoss++;title="💥 Sistema desconectado";text="Te quedaste sin intentos. Esta es la palabra correcta:"}
+  if(G.score>store.best){store.best=G.score;save()}
+  const next=$("oNext");
+  if(!last){next.textContent="Siguiente palabra ▶";next.onclick=()=>{G.idx++;loadWord()}}
+  else{
+    if(G.lvlLoss===0){if(!store.done.includes(G.lvl)){store.done.push(G.lvl);save()}if(G.lvlErr<=4)unlock("est");if(store.done.length===LV.length)unlock("arq")}
+    text+=`\nNivel terminado: ${G.wins}/${LV[G.lvl].w.length} palabras · ${G.score} puntos.`;
+    if(G.lvl<LV.length-1){next.textContent="Siguiente nivel ▶";next.onclick=()=>startLevel(G.lvl+1)}
+    else{next.textContent="Jugar de nuevo ↺";next.onclick=()=>startLevel(0)}
+  }
+  $("oTitle").textContent=title;$("oWord").textContent=G.disp;
+  $("oText").style.whiteSpace="pre-line";$("oText").textContent=(win?"":"")+text+"\n"+G.hint;
+  $("oWord").style.color=win?"var(--em)":"var(--rose)";
+  render();
+  setTimeout(()=>$("over").classList.add("show"),650);
+}
+function render(){
+  $("hint").textContent=G.hint;
+  $("word").innerHTML=[...G.disp].map(c=>{
+    if(c===" ")return '<span class="ch sp"></span>';
+    const b=norm(c),show=G.g.has(b);
+    if(show)return `<span class="ch">${c}</span>`;
+    if(G.over)return `<span class="ch miss">${c}</span>`;
+    return '<span class="ch"></span>';
+  }).join("");
+  document.querySelectorAll(".k").forEach(k=>{
+    const l=k.dataset.l,u=G.g.has(l);
+    k.disabled=u||G.over;
+    k.classList.toggle("ok",u&&G.norm.includes(l));
+    k.classList.toggle("no",u&&!G.norm.includes(l));
+  });
+  document.querySelectorAll(".cell").forEach((c,i)=>c.classList.toggle("x",i>=MAX-G.err));
+  for(let i=0;i<6;i++)$("p"+i).classList.toggle("off",i<G.err);
+  $("status").textContent=G.msg;
+  $("sLvl").textContent=LV[G.lvl].ic+" "+LV[G.lvl].n;
+  $("sWord").textContent=(G.idx+1)+" / "+LV[G.lvl].w.length;
+  $("sErr").textContent=G.err+" / "+MAX;
+  $("sStreak").textContent="🔥 "+G.streak;
+  $("sScore").textContent=G.score;
+  $("sBest").textContent=store.best;
+  tick();
+}
+function renderBadges(){
+  $("badges").innerHTML=BD.map(b=>`<div class="bd ${store.badges.includes(b.id)?"on":""}"><div class="ic">${b.ic}</div><b>${b.n}</b><small>${b.d}</small></div>`).join("");
+  $("bCount").textContent="("+store.badges.length+"/"+BD.length+")";
+}
+buildStatic();renderBadges();startLevel(0);
+setInterval(tick,100);
+</script>
+</body>
+</html>
